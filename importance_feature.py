@@ -114,7 +114,7 @@ if __name__ == "__main__":
     # print("%d documents - %0.3fMB (test set)" % (
     #     len(data_test.data), data_test_size_mb))
     #print("%d categories" % len(categories))
-    print()
+    #print()
 
     # split a training set and a test set
     y_train, y_test = data_train.target, data_test.target
