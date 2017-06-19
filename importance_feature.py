@@ -91,7 +91,7 @@ if __name__ == "__main__":
     #     'sci.space',
     # ]
     # load dataset
-    print("Loading 20 newsgroups dataset for categories:")
+    #print("Loading 20 newsgroups dataset for categories:")
     #print(categories if categories else "all")
 
     # data_train = fetch_20newsgroups(subset='train', categories=categories,
