@@ -27,6 +27,12 @@ from sklearn import metrics
 from itertools import chain
 from nltk.corpus import wordnet
 
+def write_file(name, data):
+    with open(name, 'w') as fi:
+        for line in data:
+            fi.write(line)
+            fi.close()
+
 def extrac_import_feature(clf):
     print('_' * 80)
     print("Training: ")
