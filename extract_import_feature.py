@@ -55,7 +55,7 @@ def extrac_import_feature(clf):
         print("density: %f" % density(clf.coef_))
 
         if feature_names is not None:
-            print("---top 10 keywords per class:")
+            print("---top keywords per class:")
             for i, label in enumerate(target_names):
                 #print (len(np.argsort(clf.coef_[i])))
                 count = int(len(np.argsort(clf.coef_[i])) * 0.1)
