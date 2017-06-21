@@ -5,6 +5,7 @@ import numpy as np
 from optparse import OptionParser
 import sys
 from time import time
+import csv
 import matplotlib.pyplot as plt
 
 from sklearn.datasets import fetch_20newsgroups
@@ -26,12 +27,13 @@ from sklearn.utils.extmath import density
 from sklearn import metrics
 from itertools import chain
 from nltk.corpus import wordnet
+import nltk
 
 def write_file(name, data):
     with open(name, 'w') as fi:
         for line in data:
             fi.write(line)
-            fi.close()
+    fi.close()
 
 def extrac_import_feature(clf):
     print('_' * 80)
@@ -41,6 +43,10 @@ def extrac_import_feature(clf):
     clf.fit(X_train, y_train)
     train_time = time() - t0
     print("train time: %0.3fs" % train_time)
+
+    ##value
+    list_label = []
+    list_list_feature = []
 
     t0 = time()
     pred = clf.predict(X_test)
@@ -63,6 +69,10 @@ def extrac_import_feature(clf):
                 top10 = np.argsort(clf.coef_[i])[-count:]
                 #print(trim("%s: %s" % (label, " ".join(feature_names[top10]))))
                 print("%s: %s" % (label, " ".join(feature_names[top10])))
+                list_feature = list(feature_names[top10])
+                list_list_feature.append(list_feature)
+                list_label.append(label)
+
         print()
 
 
@@ -72,14 +82,42 @@ def extrac_import_feature(clf):
 
     print()
     clf_descr = str(clf).split('(')[0]
-    return clf_descr, score, train_time, test_time
+    #return clf_descr, score, train_time, test_time
+    return list_label, list_list_feature
+
+def process_csv():
+    category, content = [], []
+    with open('1e6aa914555236a0c9cea7a330d5a04e_170607144459.csv') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            category.append(row['intent'])
+            content.append(row['text'])
+    return category, content
+
+def contains_word(s, w):
+    return (' ' + w + ' ') in (' ' + s + ' ')
+
+def find_pos_word(label, text, intent, content):
+    #
+    list_pos = []
+    for id in range(len(intent)):
+        if label == intent[id]:
+            if contains_word(content[id], text):
+                tokenize = nltk.word_tokenize(content[id])
+                sentence_pos = nltk.pos_tag(tokenize)
+                for token in sentence_pos:
+                    if text == token[0]:
+                        list_pos.append(token[1])
+    return list_pos
 
 if __name__ == '__main__':
-    ##
-    data_train = load_files('train')
-    data_test = load_files('test')
-    print('data loaded')
 
+    ##
+    data_train = load_files('data/train')
+    data_test = load_files('data/test')
+    print('data loaded')
+    ## add
+    intent, content = process_csv()
     # order of labels in `target_names` can be different from `categories`
     target_names = data_train.target_names
 
@@ -111,15 +149,33 @@ if __name__ == '__main__':
         feature_names = np.asarray(feature_names)
 
     # results values
-    results = []
+    #results = []
 
     ##
     # Train sparse Naive Bayes classifiers
     print('=' * 80)
     print("Naive Bayes")
-    results.append(extrac_import_feature(MultinomialNB(alpha=.01)))
+    #results.append(extrac_import_feature(MultinomialNB(alpha=.01)))
+    list_lab, list_list_fe = extrac_import_feature(MultinomialNB(alpha=.01))
 
+    # seach wordnet
+    for ind in range(len(list_list_fe)):
+        label_i = list_lab[ind]
+        collec = []
+        for text in list_list_fe[ind]:
+            synonyms = wordnet.synsets(text, pos=wordnet.VERB)
+            lemmas = list(chain.from_iterable([word.lemma_names() for word in synonyms]))
+            lemmas.append(text)
+            collec = collec + lemmas
+            print(lemmas)
+        collec = set(collec)
+        print(collec)
+        print('*' * 80)
+
+        ## write file
+        data_feature = " ".join(collec)
+        write_file(label_i,data_feature)
     # wordnet
-    synonyms = wordnet.synsets('change')
-    lemmas = set(chain.from_iterable([word.lemma_names() for word in synonyms]))
-    print(lemmas)
+    #synonyms = wordnet.synsets('change')
+    #lemmas = set(chain.from_iterable([word.lemma_names() for word in synonyms]))
+    #print(lemmas)
