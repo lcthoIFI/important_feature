@@ -1,6 +1,8 @@
 from __future__ import print_function
 
 import logging
+from _operator import contains
+
 import numpy as np
 from optparse import OptionParser
 import sys
@@ -27,6 +29,9 @@ from sklearn.utils.extmath import density
 from sklearn import metrics
 from itertools import chain
 from nltk.corpus import wordnet
+from nltk.corpus import brown
+from nltk.tokenize import word_tokenize
+from nltk.tag import pos_tag, map_tag
 import nltk
 
 def write_file(name, data):
@@ -76,9 +81,9 @@ def extrac_import_feature(clf):
         print()
 
 
-    print("classification report:")
-    print(metrics.classification_report(y_test, pred,
-                                            target_names=target_names))
+    #print("classification report:")
+    #print(metrics.classification_report(y_test, pred,
+                                            #target_names=target_names))
 
     print()
     clf_descr = str(clf).split('(')[0]
@@ -104,11 +109,44 @@ def find_pos_word(label, text, intent, content):
         if label == intent[id]:
             if contains_word(content[id], text):
                 tokenize = nltk.word_tokenize(content[id])
-                sentence_pos = nltk.pos_tag(tokenize)
-                for token in sentence_pos:
-                    if text == token[0]:
+                sentence_pos = pos_tag(word_tokenize(content[id]))
+                simplifiedTags = [(word, map_tag('en-ptb', 'universal', tag)) for word, tag in sentence_pos]
+                for token in simplifiedTags:
+                    if text == token[0] and not token[1] in list_pos:
                         list_pos.append(token[1])
     return list_pos
+
+def list_synonyms(text_p, text):
+    #for text_p in lis_pos:
+        if text_p == 'ADJ':
+            synonyms = wordnet.synsets(text, pos=wordnet.ADJ)
+            return synonyms
+        elif text_p == 'ADV':
+            synonyms = wordnet.synsets(text, pos=wordnet.ADV)
+            return synonyms
+        elif text_p == 'CONJ':
+            synonyms = wordnet.synsets(text, pos=wordnet.CONJ)
+            return synonyms
+        elif text_p == 'DET':
+            synonyms = wordnet.synsets(text, pos=wordnet.DET)
+            return synonyms
+        elif text_p == 'NOUN':
+            synonyms = wordnet.synsets(text, pos=wordnet.NOUN)
+            return synonyms
+        elif text_p == 'NUM':
+            synonyms = wordnet.synsets(text, pos=wordnet.NUM)
+            return synonyms
+        elif text_p == 'PRT':
+            synonyms = wordnet.synsets(text, pos=wordnet.PRT)
+            return synonyms
+        elif text_p == 'PRON':
+            synonyms = wordnet.synsets(text, pos=wordnet.PRON)
+            return synonyms
+        elif text_p == 'VERB':
+            synonyms = wordnet.synsets(text, pos=wordnet.VERB)
+            return synonyms
+        else:
+            return []
 
 if __name__ == '__main__':
 
@@ -151,7 +189,6 @@ if __name__ == '__main__':
     # results values
     #results = []
 
-    ##
     # Train sparse Naive Bayes classifiers
     print('=' * 80)
     print("Naive Bayes")
@@ -163,11 +200,21 @@ if __name__ == '__main__':
         label_i = list_lab[ind]
         collec = []
         for text in list_list_fe[ind]:
-            synonyms = wordnet.synsets(text, pos=wordnet.VERB)
-            lemmas = list(chain.from_iterable([word.lemma_names() for word in synonyms]))
-            lemmas.append(text)
-            collec = collec + lemmas
-            print(lemmas)
+            lis_pos = find_pos_word(label_i,text, intent, content)
+            ## pos -> find
+            for text_pos in lis_pos:
+                synonyms = list_synonyms(text_pos, text)
+                #if synonyms:
+                lemmas = list(chain.from_iterable([word.lemma_names() for word in synonyms]))
+                lemmas.append(text)
+                collec = collec + lemmas
+                print('label: ' + text )
+                print(lemmas)
+            # synonyms = wordnet.synsets(text, pos=wordnet.ADV)
+            # lemmas = list(chain.from_iterable([word.lemma_names() for word in synonyms]))
+            # lemmas.append(text)
+            # collec = collec + lemmas
+            # #print(lemmas)
         collec = set(collec)
         print(collec)
         print('*' * 80)
@@ -175,7 +222,3 @@ if __name__ == '__main__':
         ## write file
         data_feature = " ".join(collec)
         write_file(label_i,data_feature)
-    # wordnet
-    #synonyms = wordnet.synsets('change')
-    #lemmas = set(chain.from_iterable([word.lemma_names() for word in synonyms]))
-    #print(lemmas)
